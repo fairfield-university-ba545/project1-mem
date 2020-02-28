@@ -1,0 +1,159 @@
+# noticed one error that in the beginning --> we removed errors without I3 and removed NA's 
+# that means that NA's were removed and the number of columns in I3 stayed the same 
+# add back the Y1 and Y2 (maybe also the categoricals)
+# I guess to many variables makes it confusing for Pyton?
+data4 = pd.concat([data4, data3[['Y1','Y2']]],axis = 1)
+data4.head()
+
+# do this instead of what we did for standardization 
+# correct way of doing it 
+# import z score
+# import z score
+# import module
+from scipy import stats
+
+# select all columns except for Y1, Y2
+data4 = data3[['S1prime_norm', 'S2prime_norm', 'S3prime_norm', 'C1_norm', 'C3_norm',
+       'C4', 'C5_norm', 'C6_norm', 'C7_norm', 'C5prime_norm',
+       'T1prime', 'T2prime_norm', 'T3prime_norm', 'T4prime_norm',
+       'T5prime_norm']]
+
+# apply the function to standerdize data
+# this returns columns like this: 0,1,2,3,4
+data4 = np.abs(stats.zscore(data4))
+data4 = pd.DataFrame(data4)
+# name the columns they are in the same order 
+data4.columns = ['S1prime_norm', 'S2prime_norm', 'S3prime_norm', 'C1_norm', 'C3_norm',
+       'C4', 'C5_norm', 'C6_norm', 'C7_norm', 'C5prime_norm',
+       'T1prime', 'T2prime_norm', 'T3prime_norm', 'T4prime_norm',
+       'T5prime_norm']
+data4.head()
+
+# I reset index just in case because I was getting NA values 
+data3 = data3.reset_index()
+data3 = data3.drop('index',axis=1)
+data4 = data4.reset_index()
+data4 = data4.drop('index',axis=1)
+
+# add back the Y1 and Y2 
+data4 = pd.concat([data4, data3[['Y1','Y2']]],axis = 1)
+data4.head()
+
+# again same thing here # defensive coding
+data = data.reset_index()
+data = data.drop('index',axis=1)
+
+# add back categoricals 
+data4 = pd.concat([data4, data[['C2','I3','C3`']]], axis=1)
+data4.head()
+
+# we are going to bin it like this because professor said (its not a rule) but that we should have less than 5 bins
+# another thing that we can then consider is to do one hot encoding/pd.get_dummies 
+1
+0100-0999	Agriculture, Forestry and Fishing
+1000-1499	Mining
+1500-1799	Construction
+2000-3999	Manufacturing
+4000-4999	Transportation, Communications, Electric, Gas and Sanitary service
+2
+5000-5199	Wholesale Trade
+5200-5999	Retail Trade
+6000-6799	Finance, Insurance and Real Estate
+7000-8999	Services
+9100-9729	Public Administration
+3
+9900-9999	Nonclassifiable
+
+# this bins manually 
+#all_data['I3_cat'] = pd.qcut(all_data.I3, q=4, labels=False )
+def assign_bins(I3):
+    if I3 >= 100 and I3 <= 4999:       
+        return 1 
+    elif (I3 >= 5000) and (I3 <= 9729):       
+        return 2
+    elif (I3 >= 5200) and (I3 <= 5999):       
+        return 2
+    elif (I3 >= 9900) and (I3 <= 9999):       
+        return 3
+    else:       
+        return 0
+
+data4['I3_bin'] = data4['I3'].apply(assign_bins)
+data4.head()
+
+#OTHER WAYS which you can play around with instead of manually  
+# to divide it in 4 quantiles based on data you can do this 
+# data4['I3'] is the same as data4.I3
+data4['I3_cat'] = pd.qcut(data4.I3, q=4, labels=False )
+
+# One-hot encoding
+data4_one_hot = data4.copy()
+data4_one_hot = pd.get_dummies(data4_one_hot, columns=['I3'], prefix = ['industry'])
+data4_one_hot.head()
+
+# we drop I3 because we have bins now and we do not need the I3 column anymore
+data4 = data4.drop('I3',axis=1)
+
+# make sure Y1, and Y2 is in the right order like this
+data4 = data4[['C2', 'C3`', 'S1prime_norm', 'S2prime_norm', 'S3prime_norm', 'C1_norm',
+       'C3_norm', 'C4', 'C5_norm', 'C6_norm', 'C7_norm', 'C5prime_norm',
+       'T1prime', 'T2prime_norm', 'T3prime_norm', 'T4prime_norm',
+       'T5prime_norm','I3_bin', 'Y1', 'Y2']]
+       
+# Correlation 
+# its not good that features themselves are correlated because that would mess over with our results 
+# but the correlation between the feature and target variable is what we want 
+# that is what we are doing here 
+s1 = data4.corr()['Y1'] > 0.5 
+s2 = data4.corr()['Y1'] < -0.5
+s1 | s2 # | means logical OR
+
+# Feature selection 
+# Run the feature selection test 
+# Results:  1 (means it bests explains the targets - Y1,Y2)
+# push it to csv - I created 2 csv's for Y1 and Y2 features you can do it differently 
+# IMPORTANT: data5.columns gives you dataframe with Y1 and Y2 but in the feature selection test last 2 columns DONT EXIST
+    # make sure you account for that when you select 1's
+# Open this 2 csv's whatever the name and run them making sure the code is the same for you
+# Record the results and go back to TEST code and add/remove columns and try to get the best score 
+
+
+# No NORMALIZATION just STANDARDIZATION code
+# What changes? 
+# duplicate the notebook and rename it 
+# columns and variable names change 
+# remove the normalization step completely 
+# we can use IQR now for outlier detection and boundry set up 
+
+# for standardization you can use any of these formulas 
+
+# scale --> we can use this also instead of z-score where we normalized the data
+
+X = data4.values # make sure no target variables here
+
+# only scale function, we can do that too 
+from sklearn.preprocessing import scale
+Xs = scale(X)
+
+# back to dataframe
+data5 = pd.DataFrame(Xs)
+# name columns
+data5.columns = ['C1', 'C4', 'C5', 'C6', 'C3_impute', 'C7_impute', 'C5`', 'T1prime',
+       'T2prime', 'T3prime', 'T4prime', 'T5prime', 'S1prime', 'S2prime',
+       'S3prime']
+# display first 5 rows
+data5.head()
+
+# MIN-MAX --> another way 
+# import scaler 
+from sklearn.preprocessing import MinMaxScaler
+# remember no Y1 and Y2 or categoricals 
+
+# import scaler 
+from sklearn.preprocessing import MinMaxScaler
+data5[data5.columns] = scaler.fit_transform(data5[data5.columns])
+
+# last thing change the imputation methods between median, mode, mean 
+# test for best results 
+
+
